@@ -1,0 +1,126 @@
+# 구청 민원 전화 접수 온톨로지 v0.1
+version: "0.1"
+
+# 민원인이 질문에 어떻게 반응했는가
+actions:
+  inform: "질문에 맞는 값을 제공함"
+  uncertain: "응답했으나 값을 하나로 특정할 수 없음 (모름, 엉뚱한 답, 불완전·불가능한 값)"
+  request: "AI에게 되묻거나 질문 이유를 요구함"
+  refuse: "답할 의사가 없음"
+
+# 모든 의도에 공통으로 적용
+rules:
+  - "value는 inform일 때만 형식에 맞게 채우고, 나머지 액션은 null."
+  - "값을 하나로, 정해진 형식으로 특정할 수 있으면 inform, 아니면 uncertain."
+  - "AI를 향한 되물음·요구면 request, 아니면서 값을 못 뽑으면 uncertain."
+  - "답하려 했지만 값이 안 나오면 uncertain, 답할 의사가 없으면 refuse."
+  - "예/아니오 질문의 '아니오'는 정상 응답이므로 inform(false)."
+  - "질문한 의도가 아닌 다른 의도의 정보만 말하면 uncertain."
+
+# AI가 묻는 질문들
+intents:
+
+  consent:
+    question: "민원 접수를 위해 개인정보 수집에 동의하시나요?"
+    value_type: boolean
+    rules:
+      - "애매한 긍정('뭐 그러던가요')은 문맥상 동의로 판단되면 inform(true)."
+    examples:
+      - { utterance: "네 동의해요", action: inform, value: true }
+      - { utterance: "뭐 그러던가요", action: inform, value: true }
+      - { utterance: "동의 안 할래요", action: inform, value: false }
+      - { utterance: "이거 안 하면 어떻게 돼요", action: request, value: null }
+
+  name:
+    question: "성함이 어떻게 되세요?"
+    value_type: free_text
+    format: "한글 2~5자"
+    rules:
+      - "낱말 빗대기·자모 설명은 최종 이름으로 조합해 inform."
+      - "이름은 부분값을 쓰지 않는다. 일부만 확인되면 uncertain."
+    examples:
+      - { utterance: "김천일입니다", action: inform, value: "김천일" }
+      - { utterance: "김밥 할 때 김 그리고 천 원 할 때 천 하나 둘 할 때 일", action: inform, value: "김천일" }
+      - { utterance: "손 승 현이요 손자 할 때 손", action: inform, value: "손승현" }
+      - { utterance: "내 이름이 뭐였더라", action: uncertain, value: null }
+      - { utterance: "오공년생이요", action: uncertain, value: null }   # 다른 의도 정보만 말함
+      - { utterance: "이름은 왜 물어보는 건데", action: request, value: null }
+      - { utterance: "이름 말하기 싫은데요", action: refuse, value: null }
+
+  birth_date:
+    question: "생년월일을 말씀해 주시겠어요?"
+    value_type: free_text
+    format: "YYYY-MM-DD (모르는 자리는 '?' — 예: 1950-??-??)"
+    rules:
+      - "두 자리 연도는 통화 날짜보다 미래가 되지 않는 가장 가까운 연도로 해석한다 (2026년 통화 기준 '오공년생'은 1950, '공이년생'은 2002)."
+      - "띠만 말하면 연도가 하나로 정해지지 않으므로 uncertain."
+      - "띠와 다른 정보를 합쳐 연도가 하나로 정해지면 inform, 띠와 연도가 모순되면 uncertain."
+      - "음력은 말한 날짜 그대로 기록한다."
+      - "존재하지 않는 날짜(2월 30일 등)는 uncertain."
+    examples:
+      - { utterance: "오공년생 칠월 이일", action: inform, value: "1950-07-02" }
+      - { utterance: "1950년 6월 닷새요", action: inform, value: "1950-06-05" }
+      - { utterance: "오공년생이에요", action: inform, value: "1950-??-??" }   # 부분값
+      - { utterance: "공오년생이요", action: inform, value: "2005-??-??" }   # 2000년대 해석
+      - { utterance: "말띠고요", action: uncertain, value: null }
+      - { utterance: "오사년생 말띠", action: inform, value: "1954-??-??" }
+      - { utterance: "오오년생 말띠", action: uncertain, value: null }   # 1955년은 양띠이므로 모순
+      - { utterance: "이월 삼십일이에요", action: uncertain, value: null }
+
+  phone:
+    question: "연락받으실 전화번호를 알려주세요."
+    value_type: free_text
+    format: "010-0000-0000 (모르는 자리는 '?' — 예: 010-????-7777)"
+    rules:
+      - "숫자·한글 혼용, 띄어쓰기 오류, 서술형('칠 네 개')은 숫자로 정규화한다."
+      - "자기 정정은 고친 값으로 inform, 해석이 갈리면 uncertain. 말버릇 '아니'는 무시한다."
+      - "자릿수가 맞지 않으면 uncertain."
+    examples:
+      - { utterance: "공일공 3456 칠팔 구공", action: inform, value: "010-3456-7890" }
+      - { utterance: "010에 앞자리는 집 번호랑 같고 끝자리는 칠 4개", action: inform, value: "010-????-7777" }
+      - { utterance: "공일공에 일이삼사에 오육칠팔 아니 오육칠구", action: inform, value: "010-1234-5679" }
+      - { utterance: "공일공 일이삼 사오육", action: uncertain, value: null }   # 자릿수 부족
+      - { utterance: "번호는 우리 아들이 알아", action: uncertain, value: null }
+
+  complaint_type:
+    question: "어떤 일로 연락 주셨어요?"
+    value_type: categorical
+    values: ["불법 주정차", "도로·보도 파손", "가로등·보안등 고장", "불법 광고물", "쓰레기·동물 사체", "기타"]
+    rules:
+      - "유형을 직접 말하지 않아도 상황 설명으로 하나가 분명하면 inform."
+      - "두 유형에 걸치면 주된 불편이 분명할 때만 inform, 아니면 uncertain."
+    examples:
+      - { utterance: "집 앞 길이 움푹 패여서 할머니가 넘어질 뻔했어", action: inform, value: "도로·보도 파손" }
+      - { utterance: "골목 전봇대 불이 나갔는데 거기 차까지 세워놔서 밤에 못 지나가", action: uncertain, value: null }   # 두 유형에 걸침
+
+  occurred_date:
+    question: "언제부터 그러셨어요?"
+    value_type: free_text
+    format: "YYYY-MM-DD"
+    rules:
+      - "상대 날짜는 통화 날짜 기준으로 계산한다."
+      - "하루로 특정되면 inform, 근사 표현('쯤', '한 닷새', '됐나')이나 명절 기준 표현은 uncertain."
+    examples:
+      - { utterance: "그저께부터요", call_date: "2026-10-08", action: inform, value: "2026-10-06" }
+      - { utterance: "추석 지나고 한 닷새 됐나", action: uncertain, value: null }
+
+  description:
+    question: "어떤 상황인지 자세히 말씀해 주세요."
+    value_type: free_text
+    format: "한두 문장 요약"
+    rules:
+      - "장황한 발화·반복은 핵심만 요약한다."
+    examples:
+      - { utterance: "우리 집 앞에 길이 움푹 패여서 어제 할머니가 넘어질 뻔했어 그거 좀 고쳐줘", action: inform, value: "집 앞 도로가 패여 보행자가 넘어질 뻔함" }
+
+  reply_channel:
+    question: "처리 결과는 어떻게 알려드릴까요?"
+    value_type: categorical
+    values: ["문자", "전화", "회신 안 함"]
+    rules:
+      - "부정으로 남은 선택지가 하나로 정해지면 inform."
+      - "'아무거나'처럼 선택을 위임하면 uncertain."
+    examples:
+      - { utterance: "문자로 주세요", action: inform, value: "문자" }
+      - { utterance: "문자는 내가 못 봐요", action: inform, value: "전화" }   # '회신 안 함' 가능성 — 팀 검토 필요
+      - { utterance: "아무거나 해요", action: uncertain, value: null }
