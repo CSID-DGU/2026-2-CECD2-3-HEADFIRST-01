@@ -1,0 +1,4 @@
+fastapi==0.141.1
+uvicorn==0.53.0
+openai==3.19.2
+pyyaml==6.0.3
