@@ -27,7 +27,7 @@ export function ClassifyPage() {
   return (
     <>
       <PageHeader
-        title="분류 데모"
+        title="단일 발화 분류"
         description="음성 파일을 올리면 발화를 텍스트로 변환하고, 노이즈를 걸러 의도와 엔티티를 분류합니다."
       />
 
