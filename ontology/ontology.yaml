@@ -1,21 +1,24 @@
-# 구청 민원 전화 접수 온톨로지 v0.1
-version: "0.1"
+# 구청 민원 전화 접수 온톨로지 v0.2
+version: "0.2"
 
 # 민원인이 질문에 어떻게 반응했는가
 actions:
   inform: "질문에 맞는 값을 제공함"
-  uncertain: "응답했으나 값을 하나로 특정할 수 없음 (모름, 엉뚱한 답, 불완전·불가능한 값)"
-  request: "AI에게 되묻거나 질문 이유를 요구함"
-  refuse: "답할 의사가 없음"
+  uncertain: "응답했으나 값을 하나로 특정할 수 없음 (모름, 엉뚱한 답, 불완전·불가능한 값, 되물음, 답변 거부)"
 
 # 모든 의도에 공통으로 적용
 rules:
-  - "value는 inform일 때만 형식에 맞게 채우고, 나머지 액션은 null."
+  - "value는 inform일 때만 형식에 맞게 채우고, uncertain이면 null."
   - "값을 하나로, 정해진 형식으로 특정할 수 있으면 inform, 아니면 uncertain."
-  - "AI를 향한 되물음·요구면 request, 아니면서 값을 못 뽑으면 uncertain."
-  - "답하려 했지만 값이 안 나오면 uncertain, 답할 의사가 없으면 refuse."
   - "예/아니오 질문의 '아니오'는 정상 응답이므로 inform(false)."
-  - "질문한 의도가 아닌 다른 의도의 정보만 말하면 uncertain."
+  - "발화에 나온 의도는 질문하지 않은 것이라도 모두 각각 출력한다. 각 의도의 action은 따로 판단한다."
+  - "질문한 의도는 항상 출력한다. 질문한 의도의 정보가 없으면 uncertain."
+
+# 분류기 출력: 발화 하나에 frame 목록. 질문한 의도가 맨 앞
+# (examples에서 frame이 하나뿐이면 action, value만 짧게 적는다)
+output:
+  frames:
+    - { intent: "<의도 이름>", action: "inform | uncertain", value: "<형식에 맞는 값 또는 null>" }
 
 # AI가 묻는 질문들
 intents:
@@ -29,7 +32,7 @@ intents:
       - { utterance: "네 동의해요", action: inform, value: true }
       - { utterance: "뭐 그러던가요", action: inform, value: true }
       - { utterance: "동의 안 할래요", action: inform, value: false }
-      - { utterance: "이거 안 하면 어떻게 돼요", action: request, value: null }
+      - { utterance: "이거 안 하면 어떻게 돼요", action: uncertain, value: null }   # 되물음
 
   name:
     question: "성함이 어떻게 되세요?"
@@ -43,9 +46,23 @@ intents:
       - { utterance: "김밥 할 때 김 그리고 천 원 할 때 천 하나 둘 할 때 일", action: inform, value: "김천일" }
       - { utterance: "손 승 현이요 손자 할 때 손", action: inform, value: "손승현" }
       - { utterance: "내 이름이 뭐였더라", action: uncertain, value: null }
-      - { utterance: "오공년생이요", action: uncertain, value: null }   # 다른 의도 정보만 말함
-      - { utterance: "이름은 왜 물어보는 건데", action: request, value: null }
-      - { utterance: "이름 말하기 싫은데요", action: refuse, value: null }
+      - { utterance: "이름은 왜 물어보는 건데", action: uncertain, value: null }   # 되물음
+      - { utterance: "이름 말하기 싫은데요", action: uncertain, value: null }   # 답변 거부
+      # 다른 의도 정보만 말함: 질문한 name은 uncertain, 말한 birth_date는 inform
+      - utterance: "오공년생이요"
+        frames:
+          - { intent: name, action: uncertain, value: null }
+          - { intent: birth_date, action: inform, value: "1950-??-??" }
+      # 두 의도를 한 번에 말함
+      - utterance: "김천일이고 오공년생 칠월 이일이에요"
+        frames:
+          - { intent: name, action: inform, value: "김천일" }
+          - { intent: birth_date, action: inform, value: "1950-07-02" }
+      # 두 의도의 action이 다름
+      - utterance: "김천일이고 말띠예요"
+        frames:
+          - { intent: name, action: inform, value: "김천일" }
+          - { intent: birth_date, action: uncertain, value: null }
 
   birth_date:
     question: "생년월일을 말씀해 주시겠어요?"
