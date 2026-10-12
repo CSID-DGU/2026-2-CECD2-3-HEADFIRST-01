@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo',
+    'Noto Sans KR', 'Malgun Gothic', sans-serif;
+
+  /* 브랜드 색 (파이프라인 다이어그램의 민트/베이지 톤) */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+
+  --color-accent-50: #fdf8ef;
+  --color-accent-100: #f8ecd6;
+  --color-accent-600: #b7791f;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800;
+    /* 한글이 글자 단위로 끊기지 않고 단어(어절) 단위로 줄바꿈 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+}
