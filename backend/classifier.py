@@ -8,6 +8,9 @@ from openai import OpenAI
 from ontology import load_questions
 from session import Session, SessionDone, next_slot
 
+# 분류기 모드: mock(서버를 부르지 않고 정해진 답) / vllm(실제 분류기 호출)
+CLASSIFIER_MODE = os.getenv("CLASSIFIER_MODE", "mock")
+
 # 분류기(vLLM) 서버 주소와 모델 이름. 서버 주소는 공개 레포에 올리지 않도록 .env로만 받는다
 VLLM_BASE_URL = os.getenv("VLLM_BASE_URL")
 VLLM_MODEL = os.getenv("VLLM_MODEL", "Qwen3.8-27B")
@@ -148,3 +151,28 @@ def to_frames(output: dict) -> list[dict]:
 
         frames.append({"slot": slot, "action": act, "value": value})
     return frames
+
+
+def mock_output(session: Session, text: str) -> dict:
+    """분류기 대신 정해진 답을 만든다. 지금 묻는 슬롯에 발화를 그대로 값으로 넣는다.
+    발화에 '몰라'나 '모르'가 있으면 UNCERTAIN을 낸다."""
+    slot = next_slot(session)
+    if "몰라" in text or "모르" in text:
+        action = {"act": "UNCERTAIN", "slot": slot, "values": [], "canonical_values": []}
+    else:
+        value = "true" if slot == "consent" else text
+        action = {"act": "INFORM", "slot": slot, "values": [value], "canonical_values": [value]}
+    return {"active_intent": "FileComplaint", "actions": [action]}
+
+
+def classify(session: Session, text: str, today: date | None = None) -> tuple[list[dict], dict]:
+    """사용자 발화를 분류해 (세션 형식 frames, 분류기 원래 출력)을 돌려준다.
+    today를 주지 않으면 오늘 날짜를 쓴다. 대화가 끝난 세션이면 SessionDone."""
+    messages = build_messages(session, text, today or date.today())
+    if CLASSIFIER_MODE == "mock":
+        raw = mock_output(session, text)
+    elif CLASSIFIER_MODE == "vllm":
+        raw = call_vllm(messages)
+    else:
+        raise ValueError(f"알 수 없는 CLASSIFIER_MODE: {CLASSIFIER_MODE!r} (가능한 값: mock, vllm)")
+    return to_frames(raw), raw
