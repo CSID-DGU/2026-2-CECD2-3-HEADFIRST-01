@@ -101,19 +101,19 @@ def turn_record(turn: Turn) -> dict:
 # ---------- API ----------
 
 
-@app.get("/health")
+@app.get("/health", summary="서버 상태 확인")
 def health():
     return {"status": "ok"}
 
 
-@app.post("/api/sessions", status_code=201)
+@app.post("/api/sessions", status_code=201, summary="대화 시작")
 def start_session():
     """새 대화를 시작하고 첫 질문을 돌려준다."""
     session = create_session()
     return success("대화가 시작되었습니다.", session_state(session), status_code=201)
 
 
-@app.get("/api/sessions/{session_id}")
+@app.get("/api/sessions/{session_id}", summary="대화 상태 조회")
 def read_session(session_id: str):
     """세션의 현재 상태와 지금까지의 턴 기록을 돌려준다."""
     session = get_session(session_id)
@@ -126,7 +126,7 @@ class TextTurnRequest(BaseModel):
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
-@app.post("/api/sessions/{session_id}/turns/text")
+@app.post("/api/sessions/{session_id}/turns/text", summary="텍스트 턴 진행")
 def text_turn(session_id: str, body: TextTurnRequest):
     """텍스트 발화 한 번을 분류해 세션에 반영하고, 결과와 다음 질문을 돌려준다."""
     started = time.perf_counter()
