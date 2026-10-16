@@ -4,11 +4,18 @@ from pathlib import Path
 
 import pytest
 
-from classifier import build_history, build_messages, to_frames
+import classifier
+from classifier import build_history, build_messages, classify, to_frames
 from session import SessionDone, add_turn, create_session, next_slot
 
 # 분류기 학습 데이터 (레포 최상위의 AI/data/sft_train.jsonl)
 SFT_PATH = Path(__file__).resolve().parents[2] / "AI" / "data" / "sft_train.jsonl"
+
+
+@pytest.fixture(autouse=True)
+def mock_mode(monkeypatch):
+    """테스트는 환경변수와 상관없이 mock 모드로 돌려 실제 서버를 부르지 않는다."""
+    monkeypatch.setattr(classifier, "CLASSIFIER_MODE", "mock")
 
 
 def load_example(dialogue_id):
@@ -113,3 +120,45 @@ def test_consent가_true_false가_아니면_uncertain():
     assert to_frames(output(("INFORM", "consent", ["네"]))) == [
         {"slot": "consent", "action": "uncertain", "value": None}
     ]
+
+
+def test_mock은_지금_묻는_슬롯에_발화를_넣는다():
+    session = create_session()
+    answer(session, "네", "consent", True)
+    frames, raw = classify(session, "김천일이요")
+    assert frames == [{"slot": "name", "action": "inform", "value": "김천일이요"}]
+    assert raw["actions"][0]["act"] == "INFORM"
+
+
+def test_mock_동의_질문에는_True():
+    frames, _ = classify(create_session(), "네 동의합니다")
+    assert frames == [{"slot": "consent", "action": "inform", "value": True}]
+
+
+def test_mock_몰라가_있으면_uncertain():
+    session = create_session()
+    answer(session, "네", "consent", True)
+    frames, _ = classify(session, "이름이 생각이 안 나 몰라")
+    assert frames == [{"slot": "name", "action": "uncertain", "value": None}]
+
+
+def test_vllm_모드는_학습_데이터_형식_메시지로_호출한다(monkeypatch):
+    sent = []
+
+    def fake_call_vllm(messages):
+        sent.append(messages)
+        return output(("INFORM", "consent", ["true"]))
+
+    monkeypatch.setattr(classifier, "CLASSIFIER_MODE", "vllm")
+    monkeypatch.setattr(classifier, "call_vllm", fake_call_vllm)
+    session = create_session()
+    frames, _ = classify(session, "네 동의합니다", date(2026, 11, 21))
+
+    assert sent == [build_messages(session, "네 동의합니다", date(2026, 11, 21))]
+    assert frames == [{"slot": "consent", "action": "inform", "value": True}]
+
+
+def test_알_수_없는_모드는_에러(monkeypatch):
+    monkeypatch.setattr(classifier, "CLASSIFIER_MODE", "gpt")
+    with pytest.raises(ValueError):
+        classify(create_session(), "네")
