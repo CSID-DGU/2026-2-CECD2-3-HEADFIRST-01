@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from classifier import build_history, build_messages
+from classifier import build_history, build_messages, to_frames
 from session import SessionDone, add_turn, create_session, next_slot
 
 # 분류기 학습 데이터 (레포 최상위의 AI/data/sft_train.jsonl)
@@ -74,3 +74,42 @@ def test_학습_데이터와_같은_프롬프트_민원_유형_질문():
 
     messages = build_messages(session, "배수구 덮개가 빠져서 발이 빠질 뻔했어", date(2026, 11, 19))
     assert messages == load_example("CT-1_0039")[:2]
+
+
+def output(*actions):
+    """분류기 출력 형식을 만든다. actions: (act, slot, canonical_values) 튜플들."""
+    return {
+        "active_intent": "FileComplaint",
+        "actions": [
+            {"act": act, "slot": slot, "values": values, "canonical_values": values}
+            for act, slot, values in actions
+        ],
+    }
+
+
+def test_INFORM은_소문자로_바꾸고_첫_번째_값을_꺼낸다():
+    assert to_frames(output(("INFORM", "name", ["전정남"]))) == [
+        {"slot": "name", "action": "inform", "value": "전정남"}
+    ]
+
+
+def test_UNCERTAIN은_값이_None():
+    assert to_frames(output(("UNCERTAIN", "phone", []))) == [
+        {"slot": "phone", "action": "uncertain", "value": None}
+    ]
+
+
+def test_슬롯_여러_개를_모두_바꾼다():
+    frames = to_frames(output(("INFORM", "name", ["성미경"]), ("INFORM", "birth_date", ["1949-03-04"])))
+    assert [frame["slot"] for frame in frames] == ["name", "birth_date"]
+
+
+def test_consent는_참_거짓_값으로_바꾼다():
+    assert to_frames(output(("INFORM", "consent", ["true"])))[0]["value"] is True
+    assert to_frames(output(("INFORM", "consent", ["false"])))[0]["value"] is False
+
+
+def test_consent가_true_false가_아니면_uncertain():
+    assert to_frames(output(("INFORM", "consent", ["네"]))) == [
+        {"slot": "consent", "action": "uncertain", "value": None}
+    ]
