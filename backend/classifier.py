@@ -1,7 +1,44 @@
+import json
+import os
 from datetime import date
+from functools import cache
+
+from openai import OpenAI
 
 from ontology import load_questions
 from session import Session, SessionDone, next_slot
+
+# 분류기(vLLM) 서버 주소와 모델 이름. 서버 주소는 공개 레포에 올리지 않도록 .env로만 받는다
+VLLM_BASE_URL = os.getenv("VLLM_BASE_URL")
+VLLM_MODEL = os.getenv("VLLM_MODEL", "Qwen3.8-27B")
+
+# 학습 데이터 system 메시지의 "슬롯과 정규화"에 나오는 슬롯 (description은 없다)
+SLOTS = ["consent", "name", "birth_date", "phone", "complaint_type", "occurred_date", "reply_channel"]
+
+# 분류기 출력 형식. vLLM이 이 형식에 맞는 JSON만 만들도록 강제한다
+OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "active_intent": {"type": "string", "enum": ["FileComplaint"]},
+        "actions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "act": {"type": "string", "enum": ["INFORM", "UNCERTAIN"]},
+                    "slot": {"type": "string", "enum": SLOTS},
+                    "values": {"type": "array", "items": {"type": "string"}},
+                    "canonical_values": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["act", "slot", "values", "canonical_values"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["active_intent", "actions"],
+    "additionalProperties": False,
+}
 
 # 대화 첫 질문 앞에 붙는 인사말
 GREETING = "안녕하세요 구청 민원 접수입니다."
@@ -64,3 +101,50 @@ def build_messages(session: Session, text: str, today: date) -> list[dict]:
         {"role": "system", "content": SYSTEM_PROMPT.replace("{today}", today.isoformat())},
         {"role": "user", "content": user},
     ]
+
+
+@cache
+def get_client() -> OpenAI:
+    """vLLM 서버에 연결하는 클라이언트. 처음 한 번만 만들고 이후에는 재사용한다."""
+    if not VLLM_BASE_URL:
+        raise RuntimeError("VLLM_BASE_URL 환경변수가 없습니다. backend/.env.example을 참고해 .env를 만드세요.")
+    # vLLM은 API 키를 확인하지 않지만 openai 라이브러리가 값을 요구해서 아무 값이나 넣는다
+    return OpenAI(base_url=VLLM_BASE_URL, api_key="EMPTY", timeout=60)
+
+
+def call_vllm(messages: list[dict]) -> dict:
+    """분류기에 메시지를 보내고, 출력 JSON을 dict로 돌려준다."""
+    response = get_client().chat.completions.create(
+        model=VLLM_MODEL,
+        messages=messages,
+        temperature=0,  # 같은 입력이면 같은 답이 나오도록 무작위성을 끈다
+        max_tokens=300,
+        response_format={"type": "json_schema", "json_schema": {"name": "nlu_output", "schema": OUTPUT_SCHEMA}},
+        # Qwen3의 '생각하는 글' 모드를 끈다. 학습 데이터도 JSON만 바로 출력한다
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+    )
+    return json.loads(response.choices[0].message.content)
+
+
+# consent 값은 분류기가 글자("true"/"false")로 내므로 참/거짓 값으로 바꾼다
+CONSENT_VALUES = {"true": True, "false": False}
+
+
+def to_frames(output: dict) -> list[dict]:
+    """분류기 출력(학습 데이터 형식)을 세션 형식 [{slot, action, value}]로 바꾼다."""
+    frames = []
+    for action in output["actions"]:
+        slot = action["slot"]
+        act = action["act"].lower()  # INFORM → inform, UNCERTAIN → uncertain
+        # 값은 canonical_values의 첫 번째. uncertain이거나 값이 없으면 None
+        value = action["canonical_values"][0] if act == "inform" and action["canonical_values"] else None
+
+        if slot == "consent" and act == "inform":
+            if value not in CONSENT_VALUES:
+                # "true"/"false"가 아닌 값은 동의 여부를 알 수 없으므로 uncertain으로 본다
+                act, value = "uncertain", None
+            else:
+                value = CONSENT_VALUES[value]
+
+        frames.append({"slot": slot, "action": act, "value": value})
+    return frames
