@@ -17,6 +17,18 @@
   --color-accent-50: #fdf8ef;
   --color-accent-100: #f8ecd6;
   --color-accent-600: #b7791f;
+
+  /* 대화 상태 패널: 이번 턴에 바뀐 항목을 잠깐 강조 */
+  --animate-flash: flash 1.8s ease-out;
+  @keyframes flash {
+    0%,
+    30% {
+      background-color: var(--color-brand-100);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
 }
 
 @layer base {
