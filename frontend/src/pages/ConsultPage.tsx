@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { CalendarDays, CircleAlert, Info, RotateCcw, X } from 'lucide-react'
+import { CalendarDays, CircleAlert, RotateCcw, X } from 'lucide-react'
 import type { TurnInput } from '@/api/dialog'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ChatTimeline } from '@/components/dialog/ChatTimeline'
 import { Composer } from '@/components/dialog/Composer'
 import { StatePanel } from '@/components/dialog/StatePanel'
-import { config } from '@/config'
-import { ONTOLOGY_VERSION } from '@/constants/ontology'
 import { useDialog } from '@/hooks/useDialog'
 import { formatKoreanDate } from '@/utils/date'
 
@@ -50,16 +48,6 @@ export function ConsultPage() {
           </>
         }
       />
-
-      {config.useMock && (
-        <div className="mb-6 flex gap-2.5 rounded-xl border border-accent-600/20 bg-accent-50 px-4 py-3 text-sm text-accent-600">
-          <Info className="mt-0.5 size-4 shrink-0" />
-          <p>
-            <b className="font-semibold">Mock 모드</b> — 음성은 녹음 내용과 관계없이 시연용 대화가 순서대로 나오고,
-            텍스트는 온톨로지 v{ONTOLOGY_VERSION} 예시 발화만 인식합니다.
-          </p>
-        </div>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
         <section className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
