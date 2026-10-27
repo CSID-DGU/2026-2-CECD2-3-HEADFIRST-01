@@ -31,43 +31,6 @@ export type Frame = {
   value: FrameValue
 }
 
-/** 서버에 보내는 이전 턴 기록 (문맥용) */
-export type TurnHistoryItem = {
-  askedIntent: IntentKey | null
-  utterance: string
-}
-
-/**
- * POST /api/dialog/turn 요청의 payload (multipart 의 "payload" 필드에 JSON 문자열로 담음)
- * 음성은 같은 요청의 "audio" 필드. text 가 있으면 STT 없이 바로 분류.
- */
-export type TurnRequest = {
-  sessionId: string
-  /** 통화 날짜 YYYY-MM-DD — "그저께" 같은 상대 날짜 계산 기준 */
-  callDate: string
-  /** 이번에 AI가 물어본 의도 (질문한 의도는 항상 출력되어야 함) */
-  askedIntent: IntentKey | null
-  /** 지금까지의 대화 (이전 턴 정정 등 문맥 판단용) */
-  history: TurnHistoryItem[]
-  /** 텍스트 입력 모드일 때 발화 */
-  text?: string
-}
-
-/** POST /api/dialog/turn 응답 */
-export type TurnResponse = {
-  /** STT 전사문 (텍스트 입력이면 입력한 문장 그대로) */
-  transcript: string
-  frames: Frame[]
-  /** 사용한 STT 엔진 이름 (선택) */
-  sttEngine?: string
-  /** 단계별 처리 시간(ms) (선택) */
-  latencyMs?: {
-    stt?: number
-    inference?: number
-    total?: number
-  }
-}
-
 /* ───────────── 화면에서만 쓰는 상태 ───────────── */
 
 /**
@@ -110,5 +73,9 @@ export type Turn = {
   frames: Frame[]
   changes: SlotChange[]
   sttEngine?: string
-  latencyMs?: TurnResponse['latencyMs']
+  latencyMs?: {
+    stt?: number
+    inference?: number
+    total?: number
+  }
 }
