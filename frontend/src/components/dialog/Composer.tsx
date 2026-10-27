@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Keyboard, Mic, RotateCcw } from 'lucide-react'
-import type { TurnInput } from '@/api/dialog'
+import type { TurnInput } from '@/api/session'
 import { INTENT_MAP } from '@/constants/ontology'
 import type { NextStep } from '@/utils/nextQuestion'
 import { TextInput } from './TextInput'
