@@ -10,7 +10,7 @@ class WhisperLocalEngine(STTEngine):
     name = "whisper-large-v3-turbo"
 
     def __init__(self):
-        # faster-whisper는 requirements-stt.txt에만 있으므로, 이 엔진을 만들 때만 불러온다
+        # 모델 라이브러리는 무거우므로 stub 엔진만 쓰는 로컬 개발·테스트에서는 불러오지 않도록 여기서 import한다
         from faster_whisper import WhisperModel
 
         # 모델을 GPU에 한 번만 올려 두고 이후 요청에서 재사용한다
