@@ -1,4 +1,4 @@
-from stt.base import STTEngine
+from stt.base import STTEngine, Transcript
 
 
 class StubEngine(STTEngine):
@@ -6,8 +6,9 @@ class StubEngine(STTEngine):
 
     name = "stub"
 
-    def __init__(self, text: str = "공일공에 일이삼사에 오육칠팔"):
+    def __init__(self, text: str = "공일공에 일이삼사에 오육칠팔", duration: float = 3.0):
         self.text = text
+        self.duration = duration
 
-    def transcribe(self, audio_path: str) -> str:
-        return self.text
+    def transcribe(self, audio_path: str) -> Transcript:
+        return Transcript(text=self.text, duration=self.duration)
