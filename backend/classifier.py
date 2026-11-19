@@ -15,7 +15,7 @@ CLASSIFIER_MODE = os.getenv("CLASSIFIER_MODE", "mock")
 VLLM_BASE_URL = os.getenv("VLLM_BASE_URL")
 VLLM_MODEL = os.getenv("VLLM_MODEL", "Qwen3.8-27B")
 
-# 학습 데이터 system 메시지의 "슬롯과 정규화"에 나오는 슬롯 (description은 없다)
+# 학습 데이터 system 메시지의 "슬롯과 정규화"에 나오는 슬롯 (ontology.yaml의 intents와 같다)
 SLOTS = ["consent", "name", "birth_date", "phone", "complaint_type", "occurred_date", "reply_channel"]
 
 # 분류기 출력 형식. vLLM이 이 형식에 맞는 JSON만 만들도록 강제한다
