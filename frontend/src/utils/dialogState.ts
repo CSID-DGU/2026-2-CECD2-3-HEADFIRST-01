@@ -1,23 +1,23 @@
 import { INTENT_MAP, INTENT_ORDER } from '@/constants/ontology'
+import type { Frame as ApiFrame, SlotValues } from '@/types/api'
 import type { DialogSlots, Frame, FrameValue, IntentKey, SlotChange, SlotState } from '@/types/dialog'
 
 /*
- * 대화 상태 갱신 규칙 (순수 함수 — 나중에 백엔드로 옮겨도 그대로 쓸 수 있음)
+ * 대화 상태 규칙
  *
- * - inform    → 값을 넣는다. 이미 다른 값이 있으면 최신 값으로 덮어쓰고(정정) 이전 값은 기록에 남긴다.
- * - uncertain → 이미 값이 있으면 건드리지 않는다. 값이 없으면 '불확실' 로 표시한다.
- * - 부분값(010-????-7777)을 같은 자리 그대로 채운 값(010-1234-7777)은 정정이 아니라 '채움' 으로 본다.
+ * 값은 서버 slotValues가 정답이고, 화면 상태는 턴 전후 값을 비교해서 만든다.
+ * - 값이 새로 생김 / 부분값의 '?' 자리만 채워짐 → 채움
+ * - 다른 값으로 바뀜 → 정정 (이전 값은 기록에 남김)
+ * - 값이 그대로 비어 있고 uncertain frame이 있음 → 불확실 (서버는 다시 묻지 않으므로 계속 유지)
  */
 
-const isKnownIntent = (key: string): key is IntentKey => key in INTENT_MAP
-
-/** 모르는 자리를 '?' 로 둔 부분값인지 */
+/** 모르는 자리를 '?'로 둔 부분값인지 */
 export function isPartialValue(value: FrameValue): boolean {
   return typeof value === 'string' && value.includes('?')
 }
 
 /** 부분값의 '?' 자리만 채운 값인지 (010-????-7777 → 010-1234-7777) */
-function completesPartial(partial: FrameValue, next: FrameValue): boolean {
+function fillsPartial(partial: FrameValue, next: FrameValue): boolean {
   if (typeof partial !== 'string' || typeof next !== 'string') return false
   if (partial.length !== next.length) return false
   return [...partial].every((ch, i) => ch === '?' || ch === next[i])
@@ -31,41 +31,84 @@ export function createInitialSlots(): DialogSlots {
   return slots
 }
 
-/** 한 턴의 frame 목록을 상태에 반영하고, 바뀐 항목 목록을 함께 돌려준다 */
-export function applyFrames(
+export function createEmptyValues(): SlotValues {
+  return Object.fromEntries(INTENT_ORDER.map((k) => [k, null])) as SlotValues
+}
+
+/**
+ * 서버 규칙 (backend/session.py)
+ * - inform만 반영해 덮어쓴다. uncertain은 무시
+ * - 이전 값에 '?'가 있고 길이가 같으면 '?' 자리만 새 값으로 채운다
+ */
+export function applyServerRule(values: SlotValues, frames: ApiFrame[]): SlotValues {
+  const next = { ...values }
+  for (const f of frames) {
+    if (f.action !== 'inform') continue
+    const prev = next[f.slot]
+    if (typeof prev === 'string' && prev.includes('?') && typeof f.value === 'string' && f.value.length === prev.length) {
+      const fill = f.value
+      next[f.slot] = [...prev].map((c, i) => (c === '?' ? fill[i] : c)).join('')
+    } else {
+      next[f.slot] = f.value
+    }
+  }
+  return next
+}
+
+/** 턴 전후 서버 값을 비교해 화면 상태와 바뀐 항목 목록을 만든다 */
+export function reconcileSlots(
   slots: DialogSlots,
+  before: SlotValues,
+  after: SlotValues,
   frames: Frame[],
   turn: number,
 ): { slots: DialogSlots; changes: SlotChange[] } {
   const next: DialogSlots = { ...slots }
   const changes: SlotChange[] = []
+  // frame 순서(질문한 슬롯이 맨 앞)를 먼저, 나머지는 온톨로지 순서
+  const order = [...new Set<IntentKey>([...frames.map((f) => f.intent), ...INTENT_ORDER])]
 
-  for (const frame of frames) {
-    if (!isKnownIntent(frame.intent)) continue
-    const prev = next[frame.intent]
-    const isInform = frame.action === 'inform' && frame.value !== null
+  for (const key of order) {
+    if (!(key in INTENT_MAP)) continue
+    const from = before[key] ?? null
+    const to = after[key] ?? null
+    const prev = next[key]
 
-    if (isInform) {
-      if (hasValue(prev) && prev.value === frame.value) continue // 같은 값을 다시 말함
-
-      const revised = hasValue(prev) && !(prev.status === 'partial' && completesPartial(prev.value, frame.value))
-      next[frame.intent] = {
-        status: isPartialValue(frame.value) ? 'partial' : 'filled',
-        value: frame.value,
-        previous: revised ? [...prev.previous, { value: prev.value, turn: prev.updatedTurn ?? turn }] : prev.previous,
+    if (from !== to) {
+      if (to === null) {
+        next[key] = { ...prev, status: 'empty', value: null, updatedTurn: turn }
+        continue
+      }
+      const revised = from !== null && !(isPartialValue(from) && fillsPartial(from, to))
+      next[key] = {
+        status: isPartialValue(to) ? 'partial' : 'filled',
+        value: to,
+        previous: revised ? [...prev.previous, { value: from, turn: prev.updatedTurn ?? turn }] : prev.previous,
         updatedTurn: turn,
       }
-      changes.push({ intent: frame.intent, kind: revised ? 'revised' : 'filled', from: prev.value, to: frame.value })
+      changes.push({ intent: key, kind: revised ? 'revised' : 'filled', from, to })
       continue
     }
 
-    // uncertain
-    if (hasValue(prev)) continue // 이미 받은 값은 유지
-    next[frame.intent] = { ...prev, status: 'uncertain', value: null, updatedTurn: turn }
-    changes.push({ intent: frame.intent, kind: 'uncertain', from: null, to: null })
+    const uncertain = to === null && frames.some((f) => f.intent === key && f.action === 'uncertain')
+    if (uncertain) {
+      next[key] = { ...prev, status: 'uncertain', value: null, updatedTurn: turn }
+      changes.push({ intent: key, kind: 'uncertain', from: null, to: null })
+    }
   }
 
   return { slots: next, changes }
+}
+
+/** 화면 상태의 값을 서버 값에 강제로 맞춘다 (복원 후 안전장치) */
+export function syncSlots(slots: DialogSlots, server: SlotValues): DialogSlots {
+  const next: DialogSlots = { ...slots }
+  for (const key of INTENT_ORDER) {
+    const v = server[key] ?? null
+    if (next[key].value === v) continue
+    next[key] = { ...next[key], value: v, status: v === null ? 'empty' : isPartialValue(v) ? 'partial' : 'filled' }
+  }
+  return next
 }
 
 /** 값 → 화면 표시 문자열 */
