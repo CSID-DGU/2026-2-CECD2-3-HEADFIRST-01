@@ -1,5 +1,7 @@
 """Qwen3.8-27B QLoRA 학습 스크립트.
 
+용도: 우리 민원 슬롯 분류기를 학습시키는 스크립트. v3, v3.1(A′), 트랙 1 R/P 어댑터를 모두 이 스크립트로 학습했다.
+
 - 모델 원본을 4bit로 압축해 GPU 한 장에 올리고(QLoRA의 Q), LoRA 어댑터만 학습한다.
 - GPU 1장:  python train_qlora.py --run_name test
 - GPU 3장:  accelerate launch --num_processes 3 train_qlora.py --run_name test
@@ -164,7 +166,7 @@ def main():
         eval_steps=eval_steps,
         save_strategy="epoch" if eval_steps is None else "steps",
         save_steps=eval_steps,
-        save_total_limit=2,
+        save_total_limit=3,               # 3 epoch 전부 남겨, 검증 손실이 가장 낮은 epoch를 고를 수 있게 한다
         report_to="none",
         dataloader_num_workers=2,         # CPU 한도 8코어
         dataset_num_proc=4,
