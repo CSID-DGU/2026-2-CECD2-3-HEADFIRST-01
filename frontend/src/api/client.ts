@@ -24,8 +24,11 @@ export class ApiError extends Error {
 const NETWORK_MESSAGE = '백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.'
 
 async function send(path: string, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers)
+  headers.set('ngrok-skip-browser-warning', '1')
+
   try {
-    return await fetch(`${config.apiBaseUrl}${path}`, init)
+    return await fetch(`${config.apiBaseUrl}${path}`, { ...init, headers })
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err
     throw new ApiError(NETWORK_MESSAGE, undefined, 'NETWORK')
