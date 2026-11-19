@@ -121,15 +121,6 @@ intents:
       - { utterance: "그저께부터요", call_date: "2026-10-08", action: inform, value: "2026-10-06" }
       - { utterance: "추석 지나고 한 닷새 됐나", action: uncertain, value: null }
 
-  description:
-    question: "어떤 상황인지 자세히 말씀해 주세요."
-    value_type: free_text
-    format: "한두 문장 요약"
-    rules:
-      - "장황한 발화·반복은 핵심만 요약한다."
-    examples:
-      - { utterance: "우리 집 앞에 길이 움푹 패여서 어제 할머니가 넘어질 뻔했어 그거 좀 고쳐줘", action: inform, value: "집 앞 도로가 패여 보행자가 넘어질 뻔함" }
-
   reply_channel:
     question: "처리 결과는 어떻게 알려드릴까요?"
     value_type: categorical
