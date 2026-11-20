@@ -1,0 +1,39 @@
+# 7차 (10/20 저녁). 목표: birth_date INFORM(월·일까지) + name UNCERTAIN(별칭·거절·되묻기) 보강. 6차 끝나면 자동 실행 → work/labeling_batch7.csv
+
+## A. 1983 이산가족찾기 생방송 하이라이트 (KOREAN DIASPORA KBS). 상봉 확인 대화에서 생년월일·아명/호적명 되묻기. 출연자는 당시 30~60대 → [혼합]
+https://www.youtube.com/watch?v=nDfbSYei7oM   [혼합] 이산가족을 찾습니다 첫방송 1983.06.30 46:00
+https://www.youtube.com/watch?v=yVvwG5uekoI   [혼합] 이산가족을 찾습니다 1983.07.01 -1 47:00
+https://www.youtube.com/watch?v=DVDSp0LgyhA   [혼합] 이산가족을 찾습니다 1983.07.02 -1 35:00
+https://www.youtube.com/watch?v=FZa6go49BN8   [혼합] 이산가족을 찾습니다 1983.07.03 -1 26:00
+https://www.youtube.com/watch?v=WQGkM2oorEs   [혼합] 이산가족을 찾습니다 1983.07.09 part1 36:00
+https://www.youtube.com/watch?v=0KpDIrqUaZ4   [혼합] 이산가족을 찾습니다 1983.08.05 part1 25:00
+https://www.youtube.com/watch?v=GbCQ-GS2Cuc   [혼합] 이산가족을 찾습니다 1983.08.15 _2 30:00
+https://www.youtube.com/watch?v=rgFmO_4Hz5w   [혼합] 이산가족을 찾습니다 1983.09.16 34:00
+
+## B. KBS 아침마당 [사람 찾기] 추가분 (6차에 없는 회차). 본인이 이름·년생·고향을 말하고 MC가 되묻음
+https://www.youtube.com/watch?v=BQwuPM7igsM   [노인] 사람 찾기 44년 전 잃어버린 딸 강미정 2021.03.30 11:00
+https://www.youtube.com/watch?v=y0-b_qjuZaY   [노인] 사람 찾기 49년 전 헤어진 어머니 2021.08.24 11:00
+https://www.youtube.com/watch?v=cNI0T9-jtLg   [노인] 사람 찾기 두 번의 이별 하나뿐인 아들 2021.07.13 12:00
+https://www.youtube.com/watch?v=Q68mHYtopWY   [일반] 사람 찾기 두 번 버려진 형우 씨 친부모 2021.06.04 13:00
+https://www.youtube.com/watch?v=7VW6dOSKbJ4   [노인] 58년 전 잃어버린 누나 김옥경 2022.04.07 9:00
+https://www.youtube.com/watch?v=Pb9QTt8ACQQ   [노인] 사람 찾기 어머니 송정옥 2022.02.03 9:00
+https://www.youtube.com/watch?v=HsTvcUPwqSA   [노인] 사람 찾기 56년 전 은인 석구 엄마 2021 12:00
+https://www.youtube.com/watch?v=EG7aBDASO9I   [노인] 사람 찾기 1978 신정동 준호 엄마 2021.05.03 13:00
+https://www.youtube.com/watch?v=Rn4pLxXP9-c   [노인] 사람 찾기 고등학교 은사님 2021.07.20 10:00
+https://www.youtube.com/watch?v=MhDrqFgRG2E   [노인] 사람 찾기 타향살이 친구들 2021.09.27 11:00
+https://www.youtube.com/watch?v=VoRi3kWzmhY   [일반] 사람 찾기 26년 전 친구 이경옥 2022.01.21 9:00
+https://www.youtube.com/watch?v=kFP-vT9_FeQ   [일반] 사람 찾기 22년 전 친구 채연상 2022.03.03 10:00
+https://www.youtube.com/watch?v=w_I1d7qaJqw   [노인] 사람 찾기 6.25 참전용사 유영복 전우 2021 11:00
+
+## C. 지역 라디오 생방송 청취자 전화연결 (전주MBC 여성시대, MBC경남 아침의행진, YTN). '어디 사시는 누구세요' → 'OO 엄마' 별칭·거절 → name UNCERTAIN
+https://www.youtube.com/watch?v=3KheEj0vWc8   [혼합] 전주MBC 여성시대 생방송 2021.01.06 53:00
+https://www.youtube.com/watch?v=TICQtC_doUE   [혼합] 전주MBC 여성시대 생방송 2021.06.16 56:00
+https://www.youtube.com/watch?v=4FKHIdSEXbg   [혼합] 전주MBC 여성시대 생방송 2021.11.24 53:00
+https://www.youtube.com/watch?v=_4l6oCeB3sQ   [혼합] 전주MBC 여성시대 생방송 2021.05.11 57:00
+https://www.youtube.com/watch?v=culHd5NhCqA   [혼합] MBC경남 아침의행진 30년 청취자 전화연결 2026.07.01 117:00
+https://www.youtube.com/watch?v=QQe21MvzqT0   [혼합] YTN라디오 정면승부 8주년 청취자 전화 18:00
+
+## D. 치매 선별검사 시연 (검사자가 생년월일·오늘 날짜를 묻고 어르신이 답함) → birth_date INFORM 기대
+https://www.youtube.com/watch?v=int7iILxqic   [노인] KBS 다큐세상 치매 선별검사 2019.09.20 3:00
+https://www.youtube.com/watch?v=cruEwpl3hxU   [노인] 양천구치매안심센터 치매검사를 받고싶어요 10:00
+https://www.youtube.com/watch?v=-xSNfOAMLfU   [노인] 달서구치매안심센터 치매조기검진 정밀검진 3:00
