@@ -1,0 +1,169 @@
+{
+  "model": "v32A",
+  "tag": "27b-v32A-hard200",
+  "started": "2026-11-21 09:29:52",
+  "gpu_mem_before": [
+    {
+      "gpu": 0,
+      "used_mib": 22463,
+      "total_mib": 24564
+    },
+    {
+      "gpu": 2,
+      "used_mib": 22463,
+      "total_mib": 24564
+    }
+  ],
+  "settings": {
+    "model": "v32A",
+    "base_url": "http://localhost:8001/v1",
+    "data": "/home/csuhyeon/capstone_design_2/hardset_eval_handoff_20261118/test/hard_test_sft.jsonl",
+    "concurrency": [
+      1,
+      8
+    ],
+    "requests": 200,
+    "reps": 3,
+    "warmup": 8,
+    "gpus": "0,2"
+  },
+  "results": [
+    {
+      "concurrency": 1,
+      "rep": 1,
+      "n": 200,
+      "errors": 0,
+      "p50_s": 1.571,
+      "p95_s": 2.844,
+      "mean_s": 1.772,
+      "req_per_s": 0.56,
+      "out_tok_per_s": 28.9,
+      "mean_out_tok": 51.1,
+      "wall_s": 354.3
+    },
+    {
+      "concurrency": 1,
+      "rep": 2,
+      "n": 200,
+      "errors": 0,
+      "p50_s": 1.575,
+      "p95_s": 2.88,
+      "mean_s": 1.779,
+      "req_per_s": 0.56,
+      "out_tok_per_s": 28.7,
+      "mean_out_tok": 51.1,
+      "wall_s": 355.8
+    },
+    {
+      "concurrency": 1,
+      "rep": 3,
+      "n": 200,
+      "errors": 0,
+      "p50_s": 1.575,
+      "p95_s": 2.881,
+      "mean_s": 1.779,
+      "req_per_s": 0.56,
+      "out_tok_per_s": 28.7,
+      "mean_out_tok": 51.2,
+      "wall_s": 355.9
+    },
+    {
+      "concurrency": 8,
+      "rep": 1,
+      "n": 200,
+      "errors": 0,
+      "p50_s": 3.72,
+      "p95_s": 5.889,
+      "mean_s": 4.054,
+      "req_per_s": 1.96,
+      "out_tok_per_s": 100.3,
+      "mean_out_tok": 51.2,
+      "wall_s": 102.1
+    },
+    {
+      "concurrency": 8,
+      "rep": 2,
+      "n": 200,
+      "errors": 0,
+      "p50_s": 3.809,
+      "p95_s": 5.897,
+      "mean_s": 4.055,
+      "req_per_s": 1.96,
+      "out_tok_per_s": 100.2,
+      "mean_out_tok": 51.1,
+      "wall_s": 102.1
+    },
+    {
+      "concurrency": 8,
+      "rep": 3,
+      "n": 200,
+      "errors": 0,
+      "p50_s": 3.79,
+      "p95_s": 5.886,
+      "mean_s": 4.052,
+      "req_per_s": 1.96,
+      "out_tok_per_s": 100.3,
+      "mean_out_tok": 51.1,
+      "wall_s": 102.0
+    }
+  ],
+  "aggregate": {
+    "1": {
+      "p50_s": {
+        "mean": 1.574,
+        "min": 1.571,
+        "max": 1.575
+      },
+      "p95_s": {
+        "mean": 2.868,
+        "min": 2.844,
+        "max": 2.881
+      },
+      "req_per_s": {
+        "mean": 0.56,
+        "min": 0.56,
+        "max": 0.56
+      },
+      "out_tok_per_s": {
+        "mean": 28.767,
+        "min": 28.7,
+        "max": 28.9
+      }
+    },
+    "8": {
+      "p50_s": {
+        "mean": 3.773,
+        "min": 3.72,
+        "max": 3.809
+      },
+      "p95_s": {
+        "mean": 5.891,
+        "min": 5.886,
+        "max": 5.897
+      },
+      "req_per_s": {
+        "mean": 1.96,
+        "min": 1.96,
+        "max": 1.96
+      },
+      "out_tok_per_s": {
+        "mean": 100.267,
+        "min": 100.2,
+        "max": 100.3
+      }
+    }
+  },
+  "gpu_mem_after": [
+    {
+      "gpu": 0,
+      "used_mib": 22463,
+      "total_mib": 24564
+    },
+    {
+      "gpu": 2,
+      "used_mib": 22463,
+      "total_mib": 24564
+    }
+  ],
+  "finished": "2026-11-21 09:53:01"
+}
